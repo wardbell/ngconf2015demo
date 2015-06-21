@@ -3,7 +3,8 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "module": "amd",
-        "target": "es5"
+        "target": "es5",
+        "noImplicitAny": true,
     },
     "files": [
         "todo.ts",

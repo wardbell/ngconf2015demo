@@ -1,0 +1,21 @@
+{
+  "name": "ng2do-mean-demo",
+  "version": "0.0.1",
+  "description": "MEAN demo with Angular2",
+  "authors": [
+    "Ward Bell"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular2" : "https://code.angularjs.org/2.0.0-alpha.26/angular2.dev.js",
+    "fetch": "^0.9.0",
+    "traceur-runtime": "^0.0.87"
+  }
+}

@@ -1,23 +1,29 @@
+///<reference path="typings/tsd.d.ts"/>
 import {Component, View, bootstrap, NgFor, bind} from 'angular2/angular2';
-import {AngularFire, FirebaseArray} from 'firebase/angularfire';
+//import {AngularFire, FirebaseArray} from 'firebase/angularfire';
+import {Todo, TodoService} from 'todo.service';
 
 @Component({
   selector: 'todo-app',
   appInjector: [
-    AngularFire,
-    bind(Firebase).toValue(new Firebase('https://webapi.firebaseio-demo.com/test'))
+    //AngularFire,
+    //bind(Firebase).toValue(new Firebase('https://webapi.firebaseio-demo.com/test')),
+    TodoService
 ]})
 @View({
   templateUrl: 'todo.html',
   directives: [NgFor]
 })
-class TodoApp {
-  todoService: FirebaseArray;
-  todoEdit: any;
+export class TodoApp {
+  //todoService: FirebaseArray ;
+  todoService: TodoService;
+  todoEdit: Todo;
   todoFilter: Boolean;
 
-  constructor(sync: AngularFire) {
-    this.todoService = sync.asArray();
+  // constructor(sync: AngularFire) {
+  //   this.todoService = sync.asArray();
+  constructor(service:TodoService) {
+    this.todoService = service;
     this.todoEdit = null;
     this.todoFilter = null;
   }
@@ -74,6 +80,7 @@ class TodoApp {
     });
     this.todoService.bulkUpdate(toClear);
   }
+  
   showAll() {
     this.todoFilter = null;
   }
@@ -83,6 +90,17 @@ class TodoApp {
   showCompleted() {
     this.todoFilter = false;
   }
-
+  
+  getMembers() {
+    this.todoService.getMembers()
+    .then(members => {
+      alert("Got github IdeaBlade members: "+ members.join(', '));
+    })
+    .catch(error => {
+      alert("Got error: " + error.message);
+    }) 
+  }
+  
 }
+
 bootstrap(TodoApp);
