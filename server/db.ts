@@ -6,57 +6,77 @@ var db = new mongodb.Db('meanTodo', server, { w: 1 });
 db.open(function() {});
 
 export interface Todo {
-	_id?: string,
+	_id?: mongodb.ObjectID,
 	completed: boolean,
 	title: string
 }
 
-export interface User {
-    _id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    fbId: number;
-    boards: Board[];
-}
+export var BAD_ID = new Error('Invalid _id; must represent a MongoDb ObjectID as a string of 24 hex characters');
 
-export interface Board {
-    title: string;
-    description: string;
-    images: mongodb.ObjectID[];
-}
+interface Callback<T>{
+    (err:any, objs?:T): void
+} 
 
-export interface Image {
-    _id: mongodb.ObjectID;
-    user: string;
-    caption: string;
-    imageUri: string;
-    link: string;
-    board: string;
-    comments: {text: string; user: string;}[];
-}
-
-export function getDummyTodos(callback: (err:any, todos:Todo[]) => void) {
+var ObjectId = mongodb.ObjectID;
+/**
+ * get all Todos. Faked ... doesn't touch the database
+ */
+export function getFakeTodos(callback: Callback<Todo[]>) {
     //var id = new mongodb.ObjectID(); // the way to create an ID
 	let list: Todo[] = [
-		{_id: '51f06ded06a7baa417000005', completed: true, title: 'Buy wine'},
-		{_id: '51f06ded06a7baa417000006', completed: true, title: 'Buy cheese'},
-		{_id: '51f06ded06a7baa417000007', completed: false, title: 'Drink wine'},
-		{_id: '51f06ded06a7baa417000008', completed: false, title: 'Buy more cheese'}     
+		{_id: new ObjectId('51f06ded06a7baa417000005'), title: 'Buy wine', completed: true,},
+		{_id: new ObjectId('51f06ded06a7baa417000006'), title: 'Buy cheese', completed: true},
+		{_id: new ObjectId('51f06ded06a7baa417000007'), title: 'Drink wine', completed: false},
+		{_id: new ObjectId('51f06ded06a7baa417000008'), title: 'Buy more cheese', completed: false}     
     ];
     callback(null, list);
 }
 
-export function getUser(id: string, callback: (user: User) => void) {
-    db.collection('users', function(error, users) {
-        if(error) { console.error(error); return; }
-        users.findOne({_id: id}, function(error, user) {
-           if(error) { console.error(error); return; }
-           callback(user);
-        });
-    });
+/**
+ * get all Todos
+ */
+export function getAllTodos(callback:  Callback<Todo[]>) {
+    withTodos(todos => {
+        console.log('mongodb: getting all todos');
+        todos.find({}).toArray(callback);
+    }, callback);
 }
 
+/**
+ * get the Todo with the given id
+ */
+export function getTodoById(id: string, callback: Callback<Todo>) {
+    withTodos(todos => {
+        let objId: mongodb.ObjectID;
+        try {
+          objId = new ObjectId(id);          
+        } catch(e){
+            callback(BAD_ID);
+            return;
+        }
+        console.log('mongodb: looking for Todo w/ _id=' + objId.toString());
+        todos.findOne({_id: objId}, callback);
+    }, callback);
+}
+
+/////////////
+
+// Get the 'todos' collection. If that succeeds, perform the action
+function withTodos<T>(
+    action:   (collection:mongodb.Collection) => void, 
+    callback: Callback<T>) {
+        
+   db.collection('todos', function(error, collection) {
+        if(error) { 
+            console.error(error); 
+            callback(error); 
+            return;
+        }
+        action(collection)
+    });   
+}
+
+/*
 export function getUsers(callback: (users: User[]) => void) {
     db.collection('users', function(error, users_collection) {
         if(error) { console.error(error); return; }
@@ -125,3 +145,4 @@ export function addPin(userid: string, boardid: string, imageUri: string, link: 
         })
     })
 }
+*/
