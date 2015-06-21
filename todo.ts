@@ -75,7 +75,8 @@ export class TodoApp {
     var toClear = {};
     this.todoService.list.forEach((todo) => {
       if(todo.completed) {
-        toClear[todo._key] = null;
+        // toClear[todo._key] = null; // firebase
+        toClear[todo._id] = null; // mongodb
       }
     });
     this.todoService.bulkUpdate(toClear);

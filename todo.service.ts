@@ -1,21 +1,17 @@
 ///<reference path="typings/tsd.d.ts"/>
 ///<reference path="typings/window.extend.d.ts" />
 export interface Todo {
-	_key?: string,
+	_id?: string,
 	completed: boolean,
 	title: string
 }
 
 export class TodoService {
+	apiRoute = '/api/';
 	list: Todo[];
 	members: string[];
     constructor(){
-        this.list = [
-			{_key: "-JsEMInBjILUft6fVKtK", completed: true, title: "Buy beer"},
-			{_key: "-JskMInBjILUft6fVKtK", completed: true, title: "Buy pretzels"},
-			{_key: "-JsFcmhfLuurMJZS2d_N", completed: false, title: "Drink beer"},
-			{_key: "-JsHv6kWXqE2aizOUU1z", completed: false, title: "Buy more beer"}
-		];
+		this.getTodos();
     }
 	/**
 	 * Add new Todo and save
@@ -51,6 +47,7 @@ export class TodoService {
 	 * get the IdeaBlade github members and populate member array
 	 */	
 	getMembers() : Promise<string[]> {
+		
 	    return window.fetch('https://api.github.com/orgs/ideablade/members')
 	        .then(response => 
 	          response.json())
@@ -64,4 +61,30 @@ export class TodoService {
 			  return Promise.reject(error);
 	        })   
     }
+	getTodos() : Promise<Todo[]> {
+				
+		// Start with fake todos
+        this.list = [
+			{_id: '51f06ded06a7baa417000001', completed: true, title: 'Buy beer'},
+			{_id: '51f06ded06a7baa417000002', completed: true, title: 'Buy pretzels'},
+			{_id: '51f06ded06a7baa417000003', completed: false, title: 'Drink beer'},
+			{_id: '51f06ded06a7baa417000004', completed: false, title: 'Buy more beer'}
+		];
+		//return Promise.resolve(this.list);
+	
+	    // Go to node server for todos	
+	    return window.fetch(this.apiRoute + 'todos')
+	        .then(response => 
+	          response.json())
+	        .then(json => {
+				this.list = json;
+				console.log("Got todos: " + 
+					this.list.map(t=>t.title).join(', '))
+				return this.list;
+	        })
+	        .catch(error => {
+	          console.log("Error getting todos: " + error.message);
+			  return Promise.reject(error);
+	        }) 		
+	}
 }
