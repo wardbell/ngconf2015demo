@@ -71,7 +71,6 @@ export class TodoService {
 	        .then(response => response.json())
 	        .then(todo => {
 				newTodo._id = todo._id;
-				this.list = todo;
 				console.log('Added todo="'+todo.title+'" to db with _id=' + todo._id);
 				return todo;
 	        })
