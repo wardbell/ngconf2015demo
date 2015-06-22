@@ -21,13 +21,7 @@ app.use(express.static(__dirname+'/../'));
 
 app.use('/api', routes.router);
 
-var env = process.env.NODE_ENV || 'development';
-if (env === 'development') {
-    app.use(errorHandler({ dumpExceptions: true, showStack: true }));
-}
-else if (env === 'production') {
-    app.use(errorHandler());
-}
+app.use(errorHandler({ dumpExceptions: true, showStack: true }));
 
 app.listen(port, function(){
     console.log("process.cwd(): "+process.cwd());

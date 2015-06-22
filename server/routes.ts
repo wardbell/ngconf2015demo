@@ -6,19 +6,14 @@ export var router:express.Router = express.Router();
 
 router.get('/todos/:id', getTodoById); 
 router.get('/todos',  getAllTodos); 
-router.get('/:resource', apiNotFound);
 router.post('/todos', addTodo); 
 router.put('/todos', updateTodo); 
 router.delete('/todos/:id', deleteTodo); 
 
-function apiNotFound(req: express.Request, res: express.Response, next: Function) {
-    var resourceName  = req.params.resource;
-        res.status(404).send('Unable to get resource "' + resourceName + '"');
-}
+router.all('/:resource?', apiNotFound);
+router.all('/', apiNotFound);
 
 function getAllTodos(req: express.Request, res: express.Response, next: Function) {
-    //res.status(404).send('get Todos not yet implemented');
-    //db.getFakeTodos(_callback(res, next));
     db.getAllTodos(_callback(res, next));
 }
 
@@ -37,6 +32,11 @@ function updateTodo(req: express.Request, res: express.Response, next: Function)
 
 function deleteTodo(req: express.Request, res: express.Response, next: Function){
     db.deleteTodo(req.params.id, _callback(res, next, 204));
+}
+
+function apiNotFound(req: express.Request, res: express.Response, next: Function) {
+    var resourceName  = req.params.resource || '';
+        res.status(404).send('Unable to get resource "' + resourceName + '"');
 }
 /////////////
 
