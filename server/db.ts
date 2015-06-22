@@ -17,6 +17,11 @@ interface Callback<T>{
     (err:any, objs?:T): void
 } 
 
+// v.1 mongodb WriteResult. Should be in mongodb.d.ts
+interface WriteResultv1 {
+    ok: number, n: number
+}
+
 var ObjectId = mongodb.ObjectID;
 /**
  * get all Todos. Faked ... doesn't touch the database
@@ -46,17 +51,47 @@ export function getAllTodos(callback:  Callback<Todo[]>) {
  * get the Todo with the given id
  */
 export function getTodoById(id: string, callback: Callback<Todo>) {
+    let _id: mongodb.ObjectID;
+    try {
+      _id = new ObjectId(id);          
+    } catch(e){
+        callback(BAD_ID);
+        return;
+    }
+    
     withTodos(todos => {
-        let objId: mongodb.ObjectID;
-        try {
-          objId = new ObjectId(id);          
-        } catch(e){
-            callback(BAD_ID);
+        console.log('mongodb: looking for Todo w/ _id=' + _id.toString());
+        todos.findOne({_id: _id}, callback);
+    }, callback);
+}
+
+/**
+ * add new Todo
+ */
+export function addTodo(todoData: Todo,  callback: Callback<Todo>) {
+    let newTodo:Todo = {
+        _id: new ObjectId(),
+        title: todoData['title'] || '<new todo>',
+        completed: !!todoData['completed'],
+    }
+    
+    withTodos(todos => {
+        todos.insert(newTodo, afterInsert);
+    }, callback);
+    
+    function afterInsert(err: {}, result: WriteResultv1) {
+        if (err) {
+            console.log('mongodb: insert of new todo failed.')
+            callback(err);
             return;
         }
-        console.log('mongodb: looking for Todo w/ _id=' + objId.toString());
-        todos.findOne({_id: objId}, callback);
-    }, callback);
+        if (result.n != 1) {
+            
+        }
+        
+        console.log('mongodb: inserted new todo w/ _id=' + newTodo._id)
+        callback(null, newTodo);
+    }
 }
 
 /////////////
