@@ -58,17 +58,22 @@ npm install -g node-inspector
 
 ## Run 
 
-* Launch the Node process to serve the app using the following command:
+1. Make sure that the MongoDb process is running in one terminal/console window
+```
+<mongoinstalldir>\bin\mongod [--dbpath database]
+```
+
+1. Launch the Node process to serve the app using the following command:
 ```
 node server/server.js
 ```
 
-* Open your favorite browser and going to the following URL to access the app:
+1. Open your favorite browser and going to the following URL to access the app:
 ```
 http://localhost:3001/
 ```
 
-* Toggle between "fake" and "mongo" client-side services in *todo.ts* by switching `import` statements: 
+1. Toggle between "fake" and "mongo" client-side services in *todo.ts* by switching `import` statements: 
 ```
 //import {Todo, TodoService} from 'todo.fake.service';
 import {Todo, TodoService} from 'todo.service';
@@ -78,22 +83,27 @@ import {Todo, TodoService} from 'todo.service';
 
 **Remember to have installed *node-inspector* first! See above.** 
 
-* in one terminal/console window, 
+1. Make sure that the MongoDb process is running in one terminal/console window
+```
+<mongoinstalldir>\bin\mongod [--dbpath database]
+```
+
+1. in one terminal/console window, 
 ```
 gulp serve-dev --verbose`
 ```
 
-* in a second terminal/console window, 
+1. in a second terminal/console window, 
 ```
 node-inspector server/server.js
 ```
 
-* to run the app, open browser to 
+1. to run the app, open browser to 
 ```
 http://localhost:3001/
 ``` 
 
-* for *node-inspector* debugging, open second browser tab to 
+1. for *node-inspector* debugging, open second browser tab to 
 ```
 http://127.0.0.1:8080/debug?port=5858
 ``` 
