@@ -1,7 +1,16 @@
 ## Overview 
 
-This sample implements a complete Node.js application.
-Notable features:
+This sample implements a complete Angular2 + Node.js application.
+
+It is based on the (evolving) Angular2/Microsoft "**ngconf2015**" demo which is described in the video,
+"[Getting started with Angular 2 developer preview](https://www.youtube.com/watch?v=HmWm21cCAXM)" (May 2015).
+
+The original github repo for that is [here](https://github.com/Microsoft/ngconf2015demo).
+This MEAN version is in 
+["mean" branch of a fork of that repo](https://github.com/wardbell/ngconf2015demo/tree/mean).
+
+**Notable features**:
+- Client-side app written with Angular2 and typescript
 - Typed usage of express
 - Typed usage of mongodb for server side database
 - Typed usage of Node.js 
@@ -39,13 +48,15 @@ npm install
 bower install
 ```
 
-6. install typings (required for design time typechecking in editors)
-```
-npm install tsd -g
-tsd reinstall
-tsd rebundle
-``` 
+6. install typings (required for design time typechecking in editors). 
 
+    ```
+    npm install tsd -g
+    tsd reinstall
+    tsd rebundle
+    ``` 
+    Learn more about these "tsd" commands [here](https://github.com/DefinitelyTyped/tsd).
+    
 7. Compile the TS on command line with the following command
 ```
 gulp ts-compile
