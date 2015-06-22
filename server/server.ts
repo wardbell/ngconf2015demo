@@ -11,6 +11,9 @@ var port = 3001;
 var app = express();
 
 // Configuration
+
+// View engine here ... if you need server-generated views ... which we don't
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(methodOverride());
