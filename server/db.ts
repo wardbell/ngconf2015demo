@@ -1,28 +1,37 @@
 // Mongo
 import mongodb = require('mongodb');
+var ObjectId = mongodb.ObjectID;
 
 var server = new mongodb.Server('localhost', 27017, {auto_reconnect: true})
 var db = new mongodb.Db('meanTodo', server, { w: 1 });
 db.open(function() {});
 
-export interface Todo {
-	_id?: mongodb.ObjectID,
-	completed: boolean,
-	title: string
+
+interface ErrObj {
+    message: string,
+    status?: number
 }
 
-export var BAD_ID = new Error('Invalid _id; must represent a MongoDb ObjectID as a string of 24 hex characters');
+var BAD_ID:ErrObj = {
+    message: 'Invalid _id; must represent a MongoDb ObjectID as a string of 24 hex characters',
+    status: 400
+};
 
 interface Callback<T>{
-    (err:any, objs?:T): void
+    (err?:any, objs?:T): void
 } 
 
 // v.1 mongodb WriteResult. Should be in mongodb.d.ts
 interface WriteResultv1 {
-    ok: number, n: number
+    result: {ok: number, n: number}
 }
 
-var ObjectId = mongodb.ObjectID;
+export interface Todo {
+	_id?: mongodb.ObjectID | string,
+	completed?: boolean,
+	title?: string
+}
+
 /**
  * get all Todos. Faked ... doesn't touch the database
  */
@@ -51,16 +60,14 @@ export function getAllTodos(callback:  Callback<Todo[]>) {
  * get the Todo with the given id
  */
 export function getTodoById(id: string, callback: Callback<Todo>) {
-    let _id: mongodb.ObjectID;
-    try {
-      _id = new ObjectId(id);          
-    } catch(e){
+    let _id = get_id(id);
+    if (_id === BAD_ID){
         callback(BAD_ID);
         return;
     }
     
     withTodos(todos => {
-        console.log('mongodb: looking for Todo w/ _id=' + _id.toString());
+        console.log('mongodb: looking for Todo w/ _id=' + _id);
         todos.findOne({_id: _id}, callback);
     }, callback);
 }
@@ -69,34 +76,73 @@ export function getTodoById(id: string, callback: Callback<Todo>) {
  * add new Todo
  */
 export function addTodo(todoData: Todo,  callback: Callback<Todo>) {
+    let _id = new ObjectId()
     let newTodo:Todo = {
         _id: new ObjectId(),
-        title: todoData['title'] || '<new todo>',
-        completed: !!todoData['completed'],
+        title: todoData.title || '<new todo>',
+        completed: !!todoData.completed,
     }
-    
+       
     withTodos(todos => {
         todos.insert(newTodo, afterInsert);
     }, callback);
     
-    function afterInsert(err: {}, result: WriteResultv1) {
+    function afterInsert(err: ErrObj, result: WriteResultv1) {
+        let emsg = 'mongodb: failed to insert todo' ;
         if (err) {
-            console.log('mongodb: insert of new todo failed.')
-            callback(err);
-            return;
-        }
-        if (result.n != 1) {
-            
-        }
-        
-        console.log('mongodb: inserted new todo w/ _id=' + newTodo._id)
-        callback(null, newTodo);
+            emsg += err.message || err;
+            console.log(emsg);
+            err = {message: emsg};
+        } else if (result.result.n !== 1) {
+            emsg += ' with id= ' + _id + '; reported insert count = ' +result.result.n;
+            console.log(emsg);
+            err = {message: emsg}; 
+        } else {
+          console.log('mongodb: updated todo w/_id=' + _id);              
+        }      
+        callback(err, newTodo);
     }
 }
 
+
+/**
+ * update existing Todo
+ */
+export function updateTodo(todoData: Todo, callback: Callback<{}>) {
+    let _id = get_id(todoData && todoData._id);
+    if (_id === BAD_ID){
+        callback(BAD_ID);
+        return;
+    }
+    let update = {
+        $set: {
+            title: todoData.title,
+            completed: !!todoData.completed
+        }
+    }
+    withTodos(todos => {
+        todos.update({_id: _id}, update, afterUpdateDelete('update', _id, callback));
+    }, callback);
+}
+
+/**
+ * delete existing Todo
+ */
+export function deleteTodo(id: string, callback: Callback<{}>) {
+    let _id = get_id(id);
+    if (_id === BAD_ID){
+        callback(BAD_ID);
+        return;
+    }
+    withTodos(todos => {
+        todos.remove({_id: _id}, {single: true}, afterUpdateDelete('delete', _id, callback));
+    }, callback);
+}
 /////////////
 
-// Get the 'todos' collection. If that succeeds, perform the action
+/**
+ * Get the 'todos' collection. If that succeeds, perform the action
+ */
 function withTodos<T>(
     action:   (collection:mongodb.Collection) => void, 
     callback: Callback<T>) {
@@ -111,73 +157,42 @@ function withTodos<T>(
     });   
 }
 
-/*
-export function getUsers(callback: (users: User[]) => void) {
-    db.collection('users', function(error, users_collection) {
-        if(error) { console.error(error); return; }
-        users_collection.find({}, { '_id': 1 }).toArray(function(error, userobjs) {
-           if(error) { console.error(error); return; }
-           callback(userobjs);
-        });
-    });
+/**
+ * Get an ObjectID from the input _id.
+ * return it or the BAD_ID if _id is invalid
+ */ 
+function get_id(_id: string | mongodb.ObjectID) : mongodb.ObjectID | ErrObj {
+    if (typeof _id === 'string')  {
+        try {
+            return new ObjectId(<string>_id); 
+        } catch (e) {
+            return BAD_ID;           
+        }
+    } else if (_id instanceof mongodb.ObjectID) {
+        return _id;
+    } else {
+       return BAD_ID; 
+    }  
 }
 
-export function getImage(imageId: string, callback: (image: Image) => void) {
-    db.collection('images', function(error, images_collection) {
-        if(error) { console.error(error); return; }
-        images_collection.findOne({_id: new mongodb.ObjectID(imageId)}, function(error, image) {
-            if(error) { console.error(error); return; }
-            callback(image);
-        });
-    });
+function afterUpdateDelete<T>(opName: string, _id: any, callback: Callback<T>){
+     return function afterUpdateDelete(err: ErrObj, result: WriteResultv1) {
+            let emsg = 'mongodb: failed to '+opName+' todo w/_id=' + _id;
+            if (err) {
+                emsg += err.message || err;
+                console.log(emsg);
+                err = {message: emsg};
+            } else if (result.result.n === 0) {
+                emsg += '; not found';
+                console.log(emsg);
+                err = {message: emsg, status: 404}; 
+            } else if (result.result.n !== 1) {
+                emsg += '; reported write count = ' +result.result.n;
+                console.log(emsg);
+                err = {message: emsg};
+            } else {
+              console.log('mongodb: '+opName+'ed todo w/_id=' + _id);              
+            }      
+            callback(err);
+        }  
 }
-
-export function getImages(imageIds: mongodb.ObjectID[], callback: (images: Image[]) => void) {
-    db.collection('images', function(error, images_collection) {
-        if(error) { console.error(error); return; }
-        images_collection.find({_id: {$in: imageIds}}).toArray(function(error, images) {
-            callback(images);
-        });
-    }); 
-}
-
-export function addBoard(userid: any, title: string, description: string, callback: (user: User) => void) {
-    db.collection('users', function(error, users) {
-        if(error) { console.error(error); return; }
-        users.update(
-            {_id: userid}, 
-            {"$push": {boards: { title: title, description: description, images: []}}}, 
-            function(error, user) {
-                if(error) { console.error(error); return; }
-                callback(user);
-            }
-        );
-    });
-}
-
-export function addPin(userid: string, boardid: string, imageUri: string, link: string, caption: string, callback: (user: User) => void) {
-    db.collection('images', function(error, images_collection) {
-        if(error) { console.error(error); return; }
-        images_collection.insert({
-            user: userid,
-            caption: caption,
-            imageUri: imageUri,
-            link: link,
-            board: boardid,
-            comments: []
-        }, function(error, image) {
-            console.log(image);
-            db.collection('users', function(error, users) {
-                if(error) { console.error(error); return; }
-                users.update(
-                    {_id: userid, "boards.title": boardid}, 
-                    {"$push": {"boards.$.images": image[0]._id}},
-                    function(error, user) {
-                        callback(user);
-                    }
-                );
-            })
-        })
-    })
-}
-*/

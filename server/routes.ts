@@ -8,6 +8,8 @@ router.get('/todos/:id', getTodoById);
 router.get('/todos',  getAllTodos); 
 router.get('/:resource', apiNotFound);
 router.post('/todos', addTodo); 
+router.put('/todos', updateTodo); 
+router.delete('/todos/:id', deleteTodo); 
 
 function apiNotFound(req: express.Request, res: express.Response, next: Function) {
     var resourceName  = req.params.resource;
@@ -28,6 +30,14 @@ function addTodo(req: express.Request, res: express.Response, next: Function){
     // Todo: set the Location header
     db.addTodo(req.body, _callback(res, next, 201));
 }
+
+function updateTodo(req: express.Request, res: express.Response, next: Function){
+    db.updateTodo(req.body, _callback(res, next, 204));
+}
+
+function deleteTodo(req: express.Request, res: express.Response, next: Function){
+    db.deleteTodo(req.params.id, _callback(res, next, 204));
+}
 /////////////
 
 // post-process response just before sending it.
@@ -43,12 +53,12 @@ function addStandardHeaders(res: express.Response){
 function _callback(res: express.Response, next: Function, status = 200, resHandler?: ResHandler) {
     return function(err:any, results?:{} | {}[]) {     
         if (err) {
-            console.log("mongodb returned error: " + err.message || err)
-            if (err === db.BAD_ID){
-               res.status(400).json({message: err.message || 'bad request'}); 
-               return;
-            }
-            next(err);
+            var emsg = err.message || err;
+            console.log("mongodb returned error: " + emsg)
+            res.status(err.status || 500)
+               .json({message: emsg || 'bad request'}); 
+            return;
+
         } else {
             
             // DIAGNOSTIC
@@ -76,10 +86,9 @@ function _callback404(res: express.Response, next: Function, status = 200, resHa
     var cb = _callback(res, next, status, resHandler);
     return function(err:any, results:{} | {}[]) {
          if(!err && results == null) {
-             console.log('db: returned null/undefined');
-             res.status(404).json({message: 'not found'});            
-         } else {
-             cb(err, results);
+             console.log('db: returned null/undefined; treat as an error');
+             err = {message: 'not found', status: 404}         
          }
+         cb(err, results);
     }
 }
