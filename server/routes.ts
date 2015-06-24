@@ -1,6 +1,8 @@
 /// <reference path='tsd-server.d.ts' />
-import express = require('express')
-import db = require('./db')
+import * as express from 'express';
+import * as db from './db';
+//import express = require('express') // this works too
+//import db = require('./db')         // this works too
 
 export var router:express.Router = express.Router();
 
@@ -35,7 +37,7 @@ function deleteTodo(req: express.Request, res: express.Response, next: Function)
 }
 
 function apiNotFound(req: express.Request, res: express.Response, next: Function) {
-    var resourceName  = req.params.resource || '';
+    var resourceName  = req.params.resource;
         res.status(404).send('Unable to get resource "' + resourceName + '"');
 }
 /////////////
