@@ -4,13 +4,15 @@ import {Component, View, bootstrap, NgFor, bind} from 'angular2/angular2';
 //import {AngularFire, FirebaseArray} from 'firebase/angularfire';
 //import {Todo, TodoService} from 'todo.fake.service';
 import {Todo, TodoService} from 'todo.service';
+import {TodoService as TodoServiceFn} from 'todo.service.as.function';
 
 @Component({
   selector: 'todo-app',
   appInjector: [
     //AngularFire,
     //bind(Firebase).toValue(new Firebase('https://webapi.firebaseio-demo.com/test')),
-    TodoService
+    TodoService,
+    TodoServiceFn
 ]})
 @View({
   templateUrl: 'todo.html',
